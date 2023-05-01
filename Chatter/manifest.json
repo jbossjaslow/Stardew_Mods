@@ -2,7 +2,7 @@
   "Name": "Chatter",
   "Author": "Jboss",
   "Version": "1.0.0",
-  "Description": "Shows which NPCs you haven't talked to during the day and at events'",
+  "Description": "Displays an indicator above NPCs you haven't interacted with today",
   "UniqueID": "Jboss.Chatter",
   "EntryDll": "Chatter.dll",
   "MinimumApiVersion": "3.0.0",

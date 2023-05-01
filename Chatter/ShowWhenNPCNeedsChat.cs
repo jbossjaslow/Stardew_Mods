@@ -6,7 +6,6 @@ using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
 using StardewValley;
 using StardewValley.Locations;
-using StardewValley.Network;
 using System;
 
 namespace Chatter
@@ -18,82 +17,80 @@ namespace Chatter
         private readonly PerScreen<int> _pauseTicks = new(createNewState: () => 60);
         private readonly IModHelper _helper;
         private readonly IMonitor _monitor;
+        private readonly ModConfig _config;
 
-        public ShowWhenNPCNeedsChat(IModHelper helper, IMonitor monitor)
+        public ShowWhenNPCNeedsChat(IModHelper helper, IMonitor monitor, ModConfig config)
         {
             _helper = helper;
             _monitor = monitor;
+            _config = config;
         }
 
         public void ToggleOption(bool showWhenNPCNeedsChat)
         {
             _helper.Events.Player.Warped -= OnWarped;
-            _helper.Events.Display.RenderingHud -= OnRenderingHud_DrawNPCHasChat;
-            //_helper.Events.Display.RenderingHud -= OnRenderingHud_DrawNeedsChatTooltip;
+            _helper.Events.Display.RenderedWorld -= OnRenderedWorld_DrawNPCHasChat;
             _helper.Events.GameLoop.UpdateTicked -= UpdateTicked;
+
+            //_helper.Events.Display.RenderedWorld -= test_renderedWorld;
+            //_helper.Events.Display.Rendered -= test_rendered;
 
             if (showWhenNPCNeedsChat)
             {
                 _helper.Events.Player.Warped += OnWarped;
-                _helper.Events.Display.RenderingHud += OnRenderingHud_DrawNPCHasChat;
-                //_helper.Events.Display.RenderingHud += OnRenderingHud_DrawNeedsChatTooltip;
+                _helper.Events.Display.RenderedWorld += OnRenderedWorld_DrawNPCHasChat;
                 _helper.Events.GameLoop.UpdateTicked += UpdateTicked;
+
+                //_helper.Events.Display.RenderedWorld += test_renderedWorld;
+                //_helper.Events.Display.Rendered += test_rendered;
             }
         }
 
-        // Moves with player if in house, shouldn't do this
+        private void test_renderedWorld(object sender, RenderedWorldEventArgs e)
+        {
+            _monitor.Log($"Printing on rendered world", LogLevel.Debug);
+        }
 
-        /// <summary>Raised before drawing the HUD (item toolbar, clock, etc) to the screen. The vanilla HUD may be hidden at this point (e.g. because a menu is open).</summary>
+        private void test_rendered(object sender, RenderedEventArgs e)
+        {
+            _monitor.Log($"Printing on rendered", LogLevel.Debug);
+        }
+
+        /// <summary>Raised before drawing the world</summary>
         /// <param name="sender">The event sender.</param>
         /// <param name="e">The event arguments.</param>
-        private void OnRenderingHud_DrawNPCHasChat(object sender, RenderingHudEventArgs e)
+        private void OnRenderedWorld_DrawNPCHasChat(object sender, RenderedWorldEventArgs e)
         {
-            // draws the static icon
-            if (!Game1.eventUp &&
-                Game1.activeClickableMenu == null &&
-                Game1.currentLocation != null)
-            {
-                var NPCsInCurrentLocation = GetNPCsInCurrentLocation();
-                if (NPCsInCurrentLocation != null)
-                {
-                    foreach (var npc in NPCsInCurrentLocation)
-                    {
-                        if (_pauseTicks.Value % 60 == 0)
-                        {
-                            _monitor.Log($"Checking if {Game1.player.Name} can chat with {npc.Name}: {!HasChattedWithNPC(npc)}", LogLevel.Debug);
-                        }
+            if (Game1.activeClickableMenu != null || Game1.currentLocation == null) return;
 
-                        if (npc.CanSocialize && !HasChattedWithNPC(npc))
-                        {
-                            var positionAboveNPC = GetChatPositionAboveNPC(npc);
-                            positionAboveNPC.Y += (float)(Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 300.0 + npc.Name.GetHashCode()) * 5.0);
-                            positionAboveNPC.Y -= 100f;
-                            positionAboveNPC.X += 16f;
-                            Game1.spriteBatch.Draw(
-                                Game1.emoteSpriteSheet,
-                                Utility.ModifyCoordinatesForUIScale(new Vector2(positionAboveNPC.X, positionAboveNPC.Y)),
-                                new Rectangle(3 * (Game1.tileSize / 4) % Game1.emoteSpriteSheet.Width, 3 * (Game1.tileSize / 4) / Game1.emoteSpriteSheet.Width * (Game1.tileSize / 4), Game1.tileSize / 4, Game1.tileSize / 4),
-                                Color.White * 0.9f,
-                                0.0f,
-                                Vector2.Zero,
-                                2f,
-                                SpriteEffects.None,
-                                1f);
-                        }
-                    }
+            // draws the static icon
+            foreach (var npc in GetNPCsInCurrentLocation())
+            {
+                if (_config.enableDebugOutput && _pauseTicks.Value % 60 == 0)
+                {
+                    _monitor.Log($"Checking if {Game1.player.Name} can chat with {npc.Name}: {!HasChattedWithNPC(npc)}", LogLevel.Debug);
+                }
+
+                if (npc.CanSocialize && !HasChattedWithNPC(npc))
+                {
+                    var positionAboveNPC = GetChatPositionAboveNPC(npc);
+                    positionAboveNPC.Y += (float)(Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 300.0 + npc.Name.GetHashCode()) * 5.0);
+                    Game1.spriteBatch.Draw(
+                        Game1.emoteSpriteSheet,
+                        Utility.ModifyCoordinatesForUIScale(new Vector2(positionAboveNPC.X, positionAboveNPC.Y)),
+                        new Rectangle(3 * (Game1.tileSize / 4) % Game1.emoteSpriteSheet.Width, 3 * (Game1.tileSize / 4) / Game1.emoteSpriteSheet.Width * (Game1.tileSize / 4), Game1.tileSize / 4, Game1.tileSize / 4),
+                        Color.White * 0.9f,
+                        0.0f,
+                        Vector2.Zero,
+                        2f,
+                        SpriteEffects.None,
+                        1f);
                 }
             }
         }
 
         private Vector2 GetChatPositionAboveNPC(Character npc)
         {
-            //if (Game1.player.currentLocation is FarmHouse)
-            //{
-            //    float xPosFarmhouse = npc.position.X - Game1.viewport.X;
-            //    float yPosFarmhouse = npc.position.Y - Game1.viewport.Y;
-            //    return new Vector2(xPosFarmhouse, yPosFarmhouse);
-            //}
-
             // if the map is larger than the screen, the player is likely outside
             // if the map is smaller than the screen, the player is usually inside any house but theirs
             // farmhouse is edge case, use outside coordinates
@@ -108,17 +105,27 @@ namespace Chatter
 
             float xPos = (isOutsideX || isFarmHouse) ? outsideXPos : insideXPos;
             float yPos = (isOutsideY || isFarmHouse) ? outsideYPos : insideYPos;
+            xPos += _config.indicatorYOffset; // default: -100f
+            yPos += _config.indicatorXOffset; // default: 16f
             return new Vector2(xPos, yPos);
         }
 
-        private NetCollection<NPC> GetNPCsInCurrentLocation()
+        private static NetCollection<NPC> GetNPCsInCurrentLocation()
         {
-            NetCollection<NPC> npcs = Game1.currentLocation.characters;
-            //npcs.Filter(c => c is NPC);
+            NetCollection<NPC> npcs;
+
+            if (Game1.CurrentEvent != null)
+            {
+                npcs = new NetCollection<NPC>(Game1.CurrentEvent.actors);
+            }
+            else
+            {
+                npcs = Game1.currentLocation.characters;
+            }
             return npcs;
         }
 
-        private bool HasChattedWithNPC(NPC npc)
+        private static bool HasChattedWithNPC(NPC npc)
         {
             // if npc is sleeping, they can't chat with us
             if (npc.isSleeping.Value)
@@ -181,46 +188,5 @@ namespace Chatter
         {
             ToggleOption(false);
         }
-
-        /// <summary>Raised before drawing the HUD (item toolbar, clock, etc) to the screen. The vanilla HUD may be hidden at this point (e.g. because a menu is open).</summary>
-        /// <param name="sender">The event sender.</param>
-        /// <param name="e">The event arguments.</param>
-        //private void OnRenderingHud_DrawNeedsChatTooltip(object sender, RenderingHudEventArgs e)
-        //{
-        //    // This draws the "pets" icon
-        //    // If _pauseTicks is positive then don't render.
-        //    if (!Game1.eventUp && Game1.activeClickableMenu == null && _pauseTicks.Value <= 0)
-        //    {
-        //        DrawIconForNPCs();
-        //    }
-        //}
-
-        //private void DrawIconForNPCs()
-        //{
-        //    var NPCsInCurrentLocation = GetNPCsInCurrentLocation();
-
-        //    if (NPCsInCurrentLocation != null)
-        //    {
-        //        foreach (var npc in NPCsInCurrentLocation)
-        //        {
-        //            if (CanChatWithNPC(npc))
-        //            {
-        //                var positionAboveNPC = GetChatPositionAboveNPC(npc);
-        //                positionAboveNPC.X += 50f;
-        //                positionAboveNPC.Y += 50f;
-        //                Game1.spriteBatch.Draw(
-        //                    Game1.mouseCursors,
-        //                    Utility.ModifyCoordinatesForUIScale(new Vector2(positionAboveNPC.X, positionAboveNPC.Y + _yMovementPerDraw.Value)),
-        //                    new Rectangle(32, 0, 16, 16),
-        //                    Color.White * _alpha.Value,
-        //                    0.0f,
-        //                    Vector2.Zero,
-        //                    4f,
-        //                    SpriteEffects.None,
-        //                    1f);
-        //            }
-        //        }
-        //    }
-        //}
     }
 }
