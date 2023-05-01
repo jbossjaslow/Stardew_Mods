@@ -32,28 +32,12 @@ namespace Chatter
             _helper.Events.Display.RenderedWorld -= OnRenderedWorld_DrawNPCHasChat;
             _helper.Events.GameLoop.UpdateTicked -= UpdateTicked;
 
-            //_helper.Events.Display.RenderedWorld -= test_renderedWorld;
-            //_helper.Events.Display.Rendered -= test_rendered;
-
             if (showWhenNPCNeedsChat)
             {
                 _helper.Events.Player.Warped += OnWarped;
                 _helper.Events.Display.RenderedWorld += OnRenderedWorld_DrawNPCHasChat;
                 _helper.Events.GameLoop.UpdateTicked += UpdateTicked;
-
-                //_helper.Events.Display.RenderedWorld += test_renderedWorld;
-                //_helper.Events.Display.Rendered += test_rendered;
             }
-        }
-
-        private void test_renderedWorld(object sender, RenderedWorldEventArgs e)
-        {
-            _monitor.Log($"Printing on rendered world", LogLevel.Debug);
-        }
-
-        private void test_rendered(object sender, RenderedEventArgs e)
-        {
-            _monitor.Log($"Printing on rendered", LogLevel.Debug);
         }
 
         /// <summary>Raised before drawing the world</summary>
