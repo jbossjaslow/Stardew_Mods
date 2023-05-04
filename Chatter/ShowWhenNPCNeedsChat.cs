@@ -7,6 +7,7 @@ using StardewModdingAPI.Utilities;
 using StardewValley;
 using StardewValley.Locations;
 using System;
+using System.Collections.Generic;
 
 namespace Chatter
 {
@@ -18,12 +19,14 @@ namespace Chatter
         private readonly IModHelper _helper;
         private readonly IMonitor _monitor;
         private readonly ModConfig _config;
+        private readonly Dictionary<string, int> _npcOffsets;
 
-        public ShowWhenNPCNeedsChat(IModHelper helper, IMonitor monitor, ModConfig config)
+        public ShowWhenNPCNeedsChat(IModHelper helper, IMonitor monitor, ModConfig config, Dictionary<string, int> npcOffsets)
         {
             _helper = helper;
             _monitor = monitor;
             _config = config;
+            _npcOffsets = npcOffsets;
         }
 
         public void ToggleOption(bool showWhenNPCNeedsChat)
@@ -89,8 +92,20 @@ namespace Chatter
 
             float xPos = (isOutsideX || isFarmHouse) ? outsideXPos : insideXPos;
             float yPos = (isOutsideY || isFarmHouse) ? outsideYPos : insideYPos;
-            xPos += _config.indicatorYOffset; // default: -100f
-            yPos += _config.indicatorXOffset; // default: 16f
+
+            if (_config.useDebugOffsetsForAllNPCs)
+            {
+                xPos += _config.indicatorXOffset; // default: 16f
+                yPos += _config.indicatorYOffset; // default: -100f
+            } else if (_npcOffsets.TryGetValue(npc.Name, out int offset))
+            {
+                xPos += 16;
+                yPos += offset;
+            } else
+            {
+                xPos += 16;
+                yPos += -100;
+            }
             return new Vector2(xPos, yPos);
         }
 
@@ -118,15 +133,15 @@ namespace Chatter
             }
 
             // check friendship values with npc
-            //if (Game1.player.friendshipData.TryGetValue(npc.Name, out Friendship friendshipValues))
-            //{
-            //    int maxHeartPoints = Utility.GetMaximumHeartsForCharacter(npc) * 250;
-            //    if (friendshipValues.Points >= maxHeartPoints)
-            //    {
-            //        // if player has reached max hearts with npc, they don't need to talk to them
-            //        return true;
-            //    }
-            //}
+            if (Game1.player.friendshipData.TryGetValue(npc.Name, out Friendship friendshipValues))
+            {
+                int maxHeartPoints = Utility.GetMaximumHeartsForCharacter(npc) * 250;
+                if (friendshipValues.Points >= maxHeartPoints)
+                {
+                    // if player has reached max hearts with npc, they don't need to talk to them
+                    return true;
+                }
+            }
 
             // At this point, player has not reached max hearts with npc
             // Return if player has talked to npc today

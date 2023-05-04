@@ -1,9 +1,7 @@
-﻿using System;
-using GenericModConfigMenu;
-using Microsoft.Xna.Framework;
+﻿using GenericModConfigMenu;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
-using StardewValley;
+using System.Collections.Generic;
 
 namespace Chatter
 {
@@ -31,13 +29,15 @@ namespace Chatter
             helper.Events.Input.ButtonPressed += OnButtonPressed;
         }
 
-
         /*********
         ** Private methods
         *********/
         private void OnGameLaunched(object sender, GameLaunchedEventArgs e)
         {
-            _showWhenNPCNeedsChat = new ShowWhenNPCNeedsChat(Helper, this.Monitor, Config);
+            Dictionary<string, int> npcOffsets = this.Helper.ModContent.Load<Dictionary<string, int>>("NPCOffsets.json");
+            Monitor.Log($"Successfully loaded offsets for NPCs", LogLevel.Debug);
+
+            _showWhenNPCNeedsChat = new ShowWhenNPCNeedsChat(Helper, this.Monitor, Config, npcOffsets);
 
             // get Generic Mod Config Menu's API (if it's installed)
             var configMenu = this.Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
@@ -83,10 +83,19 @@ namespace Chatter
                 fieldId: ModConfigField.enableDebugOutput
             );
 
+            configMenu.AddBoolOption(
+                mod: this.ModManifest,
+                name: () => "Use debug offsets for all NPCs",
+                tooltip: () => "Overrides the indicator offets for all NPCs",
+                getValue: () => this.Config.useDebugOffsetsForAllNPCs,
+                setValue: value => this.Config.useDebugOffsetsForAllNPCs = value,
+                fieldId: ModConfigField.useDebugOffsetsForAllNPCs
+            );
+
             configMenu.AddNumberOption(
                 mod: this.ModManifest,
                 name: () => "Indicator X offset",
-                tooltip: () => "The X offset from the NPC's origin to draw the indicator",
+                tooltip: () => "The X offset from the NPC's origin to draw the indicator, if debug offsets is enabled",
                 getValue: () => this.Config.indicatorXOffset,
                 setValue: value => this.Config.indicatorXOffset = value,
                 min: 0f,
@@ -98,7 +107,7 @@ namespace Chatter
             configMenu.AddNumberOption(
                 mod: this.ModManifest,
                 name: () => "Indicator Y offset",
-                tooltip: () => "The Y offset from the NPC's origin to draw the indicator",
+                tooltip: () => "The Y offset from the NPC's origin to draw the indicator, if debug offsets is enabled",
                 getValue: () => this.Config.indicatorYOffset,
                 setValue: value => this.Config.indicatorYOffset = value,
                 min: -150f,
@@ -114,7 +123,7 @@ namespace Chatter
                 {
                     if (value is null) return;
 
-                    switch(name)
+                    switch (name)
                     {
                         case ModConfigField.enableIndicators:
                             if (value is bool unwrappedValue)
@@ -132,8 +141,13 @@ namespace Chatter
         /// <param name="e">The event arguments.</param>
         private void OnSaveLoaded(object sender, SaveLoadedEventArgs e)
         {
-            if (Config.enableIndicators)
-                _showWhenNPCNeedsChat.ToggleOption(true);
+            //foreach (NPC npc in Utility.getAllCharacters())
+            //{
+            //    if (npc.CanSocialize)
+            //        Debug.WriteLine(npc.Name);
+            //}
+
+            if (Config.enableIndicators) _showWhenNPCNeedsChat.ToggleOption(true);
         }
 
         /// <summary>Raised after the player presses a button on the keyboard, controller, or mouse.</summary>
@@ -148,6 +162,18 @@ namespace Chatter
             {
                 Config.enableIndicators = !Config.enableIndicators;
                 _showWhenNPCNeedsChat.ToggleOption(Config.enableIndicators);
+                this.Helper.WriteConfig(this.Config);
+            }
+
+            if (e.Button == SButton.Down)
+            {
+                Config.indicatorYOffset--;
+                Monitor.Log($"New y offset: {Config.indicatorYOffset}", LogLevel.Debug);
+                this.Helper.WriteConfig(this.Config);
+            } else if (e.Button == SButton.Up)
+            {
+                Config.indicatorYOffset++;
+                Monitor.Log($"New y offset: {Config.indicatorYOffset}", LogLevel.Debug);
                 this.Helper.WriteConfig(this.Config);
             }
         }
