@@ -3,9 +3,11 @@ using StardewModdingAPI;
 
 namespace Chatter {
 	public class ModConfig {
-		public bool enableIndicators = false;
+		public bool enableIndicators = true;
 		public SButton enableIndicatorsButton = SButton.O;
-		public float indicatorScale = 2f;
+		public bool disableIndicatorsForMaxHearts = false;
+		public bool useCustomIndicatorImage = false;
+		public bool showIndicatorsDuringCutscenes = false;
 
 		// Debug
 		public bool enableDebugOutput = false;
@@ -13,6 +15,7 @@ namespace Chatter {
 		public float debugIndicatorXOffset = 16f;
 		public float debugIndicatorYOffset = -100f;
 		public bool useArrowKeysToAdjustDebugOffsets = false;
+		public float indicatorScale = 2f;
 
 		public void SetupGenericConfigMenu(IManifest ModManifest, IGenericModConfigMenuApi configMenu) {
 			configMenu.AddBoolOption(
@@ -33,16 +36,36 @@ namespace Chatter {
 				fieldId: ModConfigField.enableIndicatorsKeybind
 			);
 
-			configMenu.AddNumberOption(
+			configMenu.AddBoolOption(
 				mod: ModManifest,
-				name: () => "Indicator scale",
-				tooltip: () => "The size of the indicators",
-				getValue: () => indicatorScale,
-				setValue: value => indicatorScale = value,
-				min: 0.5f,
-				max: 6f,
-				interval: 0.5f,
-				fieldId: ModConfigField.indicatorScale
+				name: () => "Enable indicators for max hearts",
+				tooltip: () => "If true, the indicator will display above an NPC even if you already have max friendship with them",
+				getValue: () => disableIndicatorsForMaxHearts,
+				setValue: value => disableIndicatorsForMaxHearts = value,
+				fieldId: ModConfigField.disableIndicatorsForMaxHearts
+			);
+
+			configMenu.AddBoolOption(
+				mod: ModManifest,
+				name: () => "Show indicators during cutscenes",
+				tooltip: () => "Kinda silly, but hey it's your config",
+				getValue: () => showIndicatorsDuringCutscenes,
+				setValue: value => showIndicatorsDuringCutscenes = value,
+				fieldId: ModConfigField.showIndicatorsDuringCutscenes
+			);
+
+			configMenu.AddBoolOption(
+				mod: ModManifest,
+				name: () => "Use custom indicator icon",
+				tooltip: () => "Whether the custom indicator icon should be used",
+				getValue: () => useCustomIndicatorImage,
+				setValue: value => useCustomIndicatorImage = value,
+				fieldId: ModConfigField.useCustomIndicatorImage
+			);
+
+			configMenu.AddParagraph(
+				mod: ModManifest,
+				text: () => "To use your own custom icon, create a file named \"indicator.png\" and place it in the \"Customization\" folder within the Chatter mod folder. Currently supports 16x16 images"
 			);
 
 			configMenu.AddPageLink(
@@ -60,11 +83,6 @@ namespace Chatter {
 				pageId: ModConfigPageID.debug,
 				pageTitle: () => "Debug Options"
 			);
-
-			//configMenu.AddSectionTitle(
-			//	mod: ModManifest,
-			//	text: () => "Debug Options"
-			//);
 
 			configMenu.AddBoolOption(
 				mod: ModManifest,
@@ -117,6 +135,18 @@ namespace Chatter {
 				fieldId: ModConfigField.indicatorYOffset
 			);
 
+			configMenu.AddNumberOption(
+				mod: ModManifest,
+				name: () => "Indicator scale",
+				tooltip: () => "This will affect the position of the indicator, best to leave it at 2 for now",
+				getValue: () => indicatorScale,
+				setValue: value => indicatorScale = value,
+				min: 0.5f,
+				max: 6f,
+				interval: 0.5f,
+				fieldId: ModConfigField.indicatorScale
+			);
+
 			configMenu.AddParagraph(
 				mod: ModManifest,
 				text: () => "Version " + ModManifest.Version
@@ -127,7 +157,9 @@ namespace Chatter {
 	public class ModConfigField {
 		public const string enableIndicators = "enableIndicators";
 		public const string enableIndicatorsKeybind = "enableIndicatorsKeybind";
-		public const string indicatorScale = "indicatorScale";
+		public const string disableIndicatorsForMaxHearts = "disableIndicatorsForMaxHearts";
+		public const string useCustomIndicatorImage = "useCustomIndicatorImage";
+		public const string showIndicatorsDuringCutscenes = "showIndicatorsDuringCutscenes";
 
 		// Debug
 		public const string enableDebugOutput = "enableDebugOutput";
@@ -135,6 +167,7 @@ namespace Chatter {
 		public const string indicatorXOffset = "debugIndicatorXOffset";
 		public const string indicatorYOffset = "debugIndicatorYOffset";
 		public const string useArrowKeysToAdjustDebugOffsets = "useArrowKeysToAdjustDebugOffsets";
+		public const string indicatorScale = "indicatorScale";
 	}
 
 	public class ModConfigPageID {

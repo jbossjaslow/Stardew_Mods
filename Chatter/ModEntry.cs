@@ -30,7 +30,7 @@ namespace Chatter {
         ** Private methods
         *********/
 		private void OnGameLaunched(object? sender, GameLaunchedEventArgs e) {
-			Dictionary<string, int> npcOffsets = this.Helper.ModContent.Load<Dictionary<string, int>>("NPCOffsets.json");
+			Dictionary<string, int> npcOffsets = this.Helper.ModContent.Load<Dictionary<string, int>>("Customization/NPCOffsets.json");
 			Monitor.Log($"Successfully loaded offsets for NPCs", LogLevel.Debug);
 
 			_showWhenNPCNeedsChat = new(Helper, Monitor, Config, npcOffsets);
@@ -101,6 +101,14 @@ namespace Chatter {
 			} else if (e.Button == SButton.Up && Config.useArrowKeysToAdjustDebugOffsets) {
 				Config.debugIndicatorYOffset++;
 				Monitor.Log($"New y offset: {Config.debugIndicatorYOffset}", LogLevel.Debug);
+				this.Helper.WriteConfig(this.Config);
+			} else if (e.Button == SButton.Left && Config.useArrowKeysToAdjustDebugOffsets) {
+				Config.debugIndicatorXOffset--;
+				Monitor.Log($"New x offset: {Config.debugIndicatorXOffset}", LogLevel.Debug);
+				this.Helper.WriteConfig(this.Config);
+			} else if (e.Button == SButton.Right && Config.useArrowKeysToAdjustDebugOffsets) {
+				Config.debugIndicatorXOffset++;
+				Monitor.Log($"New x offset: {Config.debugIndicatorXOffset}", LogLevel.Debug);
 				this.Helper.WriteConfig(this.Config);
 			}
 		}
