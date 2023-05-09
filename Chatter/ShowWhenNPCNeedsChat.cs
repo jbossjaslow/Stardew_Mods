@@ -82,7 +82,7 @@ namespace Chatter {
 				);
 			}
 
-			Vector2 position = Utility.ModifyCoordinatesForUIScale(new(positionAboveNPC.X, positionAboveNPC.Y));
+			//Vector2 position = Utility.ModifyCoordinatesForUIScale(positionAboveNPC);
 			Color color = Color.White * 0.9f;
 			float rotation = 0.0f;
 			Vector2 origin = Vector2.Zero;
@@ -92,7 +92,7 @@ namespace Chatter {
 
 			Game1.spriteBatch.Draw(
 				texture,
-				position,
+				positionAboveNPC,
 				rectangle,
 				color,
 				rotation,
@@ -115,20 +115,19 @@ namespace Chatter {
 			//float outsideYPos = npc.position.Y - Game1.viewport.Y;
 			//float insideYPos = npc.position.Y + ((Game1.viewport.Height - Game1.currentLocation.map.DisplayHeight) / 2);
 
-			float xPos = npc.getLocalPosition(Game1.viewport).X; // (isOutsideX || isFarmHouse) ? outsideXPos : insideXPos;
-			float yPos = npc.getLocalPosition(Game1.viewport).Y; // (isOutsideY || isFarmHouse) ? outsideYPos : insideYPos;
+			Vector2 position = npc.getLocalPosition(Game1.viewport);
 
 			if (_config.useDebugOffsetsForAllNPCs) {
-				xPos += _config.debugIndicatorXOffset; // default: 16f
-				yPos += _config.debugIndicatorYOffset; // default: -100f
+				position.X += _config.debugIndicatorXOffset; // default: 16f
+				position.Y += _config.debugIndicatorYOffset; // default: -100f
 			} else if (_npcOffsets.TryGetValue(npc.Name, out int offset)) {
-				xPos += 16;
-				yPos += offset;
+				position.X += 16;
+				position.Y += offset;
 			} else {
-				xPos += 16;
-				yPos += -100;
+				position.X += 16;
+				position.Y += -100;
 			}
-			return new(xPos, yPos);
+			return position;
 		}
 
 		private NetCollection<NPC> GetNPCsInCurrentLocation() {
@@ -140,6 +139,7 @@ namespace Chatter {
 			} else {
 				npcs = Game1.currentLocation.characters;
 			}
+			npcs.Filter(c => c.GetType() != typeof(FarmAnimal));
 			return npcs;
 		}
 
