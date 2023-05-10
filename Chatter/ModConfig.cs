@@ -10,6 +10,7 @@ namespace Chatter {
 		public bool showIndicatorsDuringCutscenes = false;
 		public float indicatorScale = 2f;
 		public bool disableIndicatorBob = false;
+		public bool showIndicatorsWhenMenuIsOpen = false;
 
 		// Debug
 		public bool enableDebugOutput = false;
@@ -39,8 +40,8 @@ namespace Chatter {
 
 			configMenu.AddBoolOption(
 				mod: ModManifest,
-				name: () => "Enable indicators for max hearts",
-				tooltip: () => "If true, the indicator will display above an NPC even if you already have max friendship with them",
+				name: () => "Disable indicators for max hearts",
+				tooltip: () => "If true, the indicator will not display above an NPC if you already have max friendship with them",
 				getValue: () => disableIndicatorsForMaxHearts,
 				setValue: value => disableIndicatorsForMaxHearts = value,
 				fieldId: ModConfigField.disableIndicatorsForMaxHearts
@@ -72,7 +73,7 @@ namespace Chatter {
 			configMenu.AddNumberOption(
 				mod: ModManifest,
 				name: () => "Indicator scale",
-				tooltip: () => "This will affect the position of the indicator, best to leave it at 2 for now",
+				tooltip: () => "The size of the indicator",
 				getValue: () => indicatorScale,
 				setValue: value => indicatorScale = value,
 				min: 0.25f,
@@ -88,6 +89,15 @@ namespace Chatter {
 				getValue: () => disableIndicatorBob,
 				setValue: value => disableIndicatorBob = value,
 				fieldId: ModConfigField.disableIndicatorBob
+			);
+
+			configMenu.AddBoolOption(
+				mod: ModManifest,
+				name: () => "Show indicator when menu is open",
+				tooltip: () => "If the menu is open, continue to show the indicators in the background (may have issues if layer is too high)",
+				getValue: () => showIndicatorsWhenMenuIsOpen,
+				setValue: value => showIndicatorsWhenMenuIsOpen = value,
+				fieldId: ModConfigField.showIndicatorsWhenMenuIsOpen
 			);
 
 			configMenu.AddPageLink(
@@ -172,6 +182,7 @@ namespace Chatter {
 		public const string showIndicatorsDuringCutscenes = "showIndicatorsDuringCutscenes";
 		public const string indicatorScale = "indicatorScale";
 		public const string disableIndicatorBob = "disableIndicatorBob";
+		public const string showIndicatorsWhenMenuIsOpen = "showIndicatorsWhenMenuIsOpen";
 
 		// Debug
 		public const string enableDebugOutput = "enableDebugOutput";
