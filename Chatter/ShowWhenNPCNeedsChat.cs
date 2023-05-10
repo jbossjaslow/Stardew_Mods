@@ -5,8 +5,10 @@ using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
 using StardewValley;
+using StardewValley.Characters;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Chatter {
 	internal class ShowWhenNPCNeedsChat : IDisposable {
@@ -28,6 +30,15 @@ namespace Chatter {
 		private readonly Vector2 indicatorOrigin = Vector2.Zero;
 		private readonly SpriteEffects indicatorSpriteEffects = SpriteEffects.None;
 		private readonly float indicatorLayerDepth = 1f;
+		private readonly string[] illegalVillagers = {
+			"BabyPig",
+			"Pig",
+			"White Chicken",
+			"Brown Chicken",
+			"White Cow",
+			"BabyWhite Cow",
+			"PonyRide"
+		};
 
 		public ShowWhenNPCNeedsChat(IModHelper helper, IMonitor monitor, ModConfig config, Dictionary<string, int> npcOffsets) {
 			_helper = helper;
@@ -69,12 +80,16 @@ namespace Chatter {
 		/// <param name="sender">The event sender.</param>
 		/// <param name="e">The event arguments.</param>
 		private void OnRenderedWorld_DrawNPCHasChat(object sender, RenderedWorldEventArgs e) {
-			if (Game1.activeClickableMenu != null || Game1.currentLocation == null) return;
+			if (Game1.currentLocation == null) return;
+
+			if (Game1.activeClickableMenu != null)
+				if (!_config.showIndicatorsWhenMenuIsOpen)
+					return;
 
 			// draws the static icon
 			foreach (var npc in GetNPCsInCurrentLocation()) {
 				if (_config.enableDebugOutput && _pauseTicks.Value % 60 == 0) {
-					_monitor.Log($"Checking if {Game1.player.Name} can chat with {npc.Name}: {!ShouldShowIndicatorFor(npc)}", LogLevel.Debug);
+					_monitor.Log($"Checking if {Game1.player.Name} can chat with {npc.Name}: {ShouldShowIndicatorFor(npc)}", LogLevel.Debug);
 				}
 
 				if (npc.CanSocialize && ShouldShowIndicatorFor(npc)) {
@@ -83,9 +98,13 @@ namespace Chatter {
 			}
 		}
 
-		private void DrawNPC(Character npc) {
-			Texture2D texture = _config.useCustomIndicatorImage ? (customIndicatorTexture ?? defaultIndicatorTexture) : defaultIndicatorTexture;
-			Rectangle bounds = _config.useCustomIndicatorImage ? (customIndicatorBounds ?? defaultIndicatorBounds) : defaultIndicatorBounds;
+		private void DrawNPC(NPC npc) {
+			Texture2D texture = _config.useCustomIndicatorImage ?
+				(customIndicatorTexture ?? defaultIndicatorTexture) :
+				defaultIndicatorTexture;
+			Rectangle bounds = _config.useCustomIndicatorImage ?
+				(customIndicatorBounds ?? defaultIndicatorBounds) :
+				defaultIndicatorBounds;
 			float scale = _config.indicatorScale;
 
 			var position = GetChatPositionAboveNPC(npc, bounds);
@@ -104,10 +123,12 @@ namespace Chatter {
 				indicatorLayerDepth);
 		}
 
-		private Vector2 GetChatPositionAboveNPC(Character npc, Rectangle textureBounds) {
+		private Vector2 GetChatPositionAboveNPC(NPC npc, Rectangle textureBounds) {
 			Vector2 position = npc.getLocalPosition(Game1.viewport);
 			float scaleAdjustmentX = (_config.indicatorScale * -8) + 32;
 			float scaleAdjustmentY = (_config.indicatorScale * -16) - 68;
+
+			// Character sprite height/width may be future idea for more accurate offsets
 
 			if (_config.useDebugOffsetsForAllNPCs) {
 				position.X += scaleAdjustmentX;
@@ -115,6 +136,9 @@ namespace Chatter {
 			} else if (_npcOffsets.TryGetValue(npc.Name, out int offset)) {
 				position.X += scaleAdjustmentX;
 				position.Y += scaleAdjustmentY + offset;
+			} else if (npc is Child) {
+				position.X += scaleAdjustmentX;
+				position.Y += scaleAdjustmentY + 39;
 			} else {
 				// only looks good at scale == 2
 				position.X += 16;
@@ -123,6 +147,7 @@ namespace Chatter {
 			return position;
 		}
 
+		/// <summary>Get a list of all NPCs in the current location</summary>
 		private NetCollection<NPC> GetNPCsInCurrentLocation() {
 			NetCollection<NPC> npcs;
 
@@ -132,10 +157,19 @@ namespace Chatter {
 			} else {
 				npcs = Game1.currentLocation.characters;
 			}
-			npcs.Filter(c => c.GetType() != typeof(FarmAnimal));
+
+			npcs.Filter(c => {
+				// At the grange festival (fall 16), the animals are classified as villagers for some reason
+				// They cannot be talked to, so they are removed from the list
+				if (illegalVillagers.Contains(c.Name))
+					return false;
+
+				return c.isVillager();
+			});
 			return npcs;
 		}
 
+		/// <summary>Whether the indicator for the given npc should be shown</summary>
 		private bool ShouldShowIndicatorFor(NPC npc) {
 			// if npc is sleeping, they can't chat with us
 			if (npc.isSleeping.Value) {
