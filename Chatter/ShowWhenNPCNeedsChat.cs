@@ -17,7 +17,17 @@ namespace Chatter {
 		private readonly IMonitor _monitor;
 		private readonly ModConfig _config;
 		private readonly Dictionary<string, int> _npcOffsets;
-		private readonly Texture2D? customTexture = null;
+
+		// Indicator properties
+		private readonly Texture2D defaultIndicatorTexture;
+		private readonly Texture2D? customIndicatorTexture;
+		private readonly Rectangle defaultIndicatorBounds;
+		private readonly Rectangle? customIndicatorBounds;
+		private readonly Color indicatorColor = Color.White * 0.9f;
+		private readonly float indicatorRotation = 0.0f;
+		private readonly Vector2 indicatorOrigin = Vector2.Zero;
+		private readonly SpriteEffects indicatorSpriteEffects = SpriteEffects.None;
+		private readonly float indicatorLayerDepth = 1f;
 
 		public ShowWhenNPCNeedsChat(IModHelper helper, IMonitor monitor, ModConfig config, Dictionary<string, int> npcOffsets) {
 			_helper = helper;
@@ -25,8 +35,18 @@ namespace Chatter {
 			_config = config;
 			_npcOffsets = npcOffsets;
 
+			defaultIndicatorTexture = Game1.emoteSpriteSheet;
+			int spriteSize = Game1.tileSize / 4;
+			defaultIndicatorBounds = new(
+				3 * spriteSize % Game1.emoteSpriteSheet.Width,
+				3 * spriteSize / Game1.emoteSpriteSheet.Width * spriteSize,
+				spriteSize,
+				spriteSize
+			);
+
 			try {
-				customTexture = _helper.ModContent.Load<Texture2D>("Customization/indicator.png");
+				customIndicatorTexture = _helper.ModContent.Load<Texture2D>("Customization/indicator.png");
+				customIndicatorBounds = customIndicatorTexture.Bounds;
 				_monitor.Log($"Custom file exists", LogLevel.Debug);
 			} catch {
 				_monitor.Log($"Custom file does not exist", LogLevel.Debug);
@@ -64,66 +84,39 @@ namespace Chatter {
 		}
 
 		private void DrawNPC(Character npc) {
-			var positionAboveNPC = GetChatPositionAboveNPC(npc);
-			positionAboveNPC.Y += (float)(Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 300.0 + npc.Name.GetHashCode()) * 5.0);
-
-			Texture2D texture;
-			Rectangle rectangle;
-			if (_config.useCustomIndicatorImage && customTexture != null) {
-				texture = customTexture;
-				rectangle = texture.Bounds;
-			} else {
-				texture = Game1.emoteSpriteSheet;
-				rectangle = new(
-					3 * (Game1.tileSize / 4) % Game1.emoteSpriteSheet.Width,
-					3 * (Game1.tileSize / 4) / Game1.emoteSpriteSheet.Width * (Game1.tileSize / 4),
-					Game1.tileSize / 4,
-					Game1.tileSize / 4
-				);
-			}
-
-			//Vector2 position = Utility.ModifyCoordinatesForUIScale(positionAboveNPC);
-			Color color = Color.White * 0.9f;
-			float rotation = 0.0f;
-			Vector2 origin = Vector2.Zero;
+			Texture2D texture = _config.useCustomIndicatorImage ? (customIndicatorTexture ?? defaultIndicatorTexture) : defaultIndicatorTexture;
+			Rectangle bounds = _config.useCustomIndicatorImage ? (customIndicatorBounds ?? defaultIndicatorBounds) : defaultIndicatorBounds;
 			float scale = _config.indicatorScale;
-			SpriteEffects spriteEffects = SpriteEffects.None;
-			float layerDepth = 1f;
+
+			var position = GetChatPositionAboveNPC(npc, bounds);
+			if (!_config.disableIndicatorBob)
+				position.Y += (float)(Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 300.0 + npc.Name.GetHashCode()) * 5.0);
 
 			Game1.spriteBatch.Draw(
 				texture,
-				positionAboveNPC,
-				rectangle,
-				color,
-				rotation,
-				origin,
+				position,
+				bounds,
+				indicatorColor,
+				indicatorRotation,
+				indicatorOrigin,
 				scale,
-				spriteEffects,
-				layerDepth);
+				indicatorSpriteEffects,
+				indicatorLayerDepth);
 		}
 
-		private Vector2 GetChatPositionAboveNPC(Character npc) {
-			// if the map is larger than the screen, the player is likely outside
-			// if the map is smaller than the screen, the player is usually inside any house but theirs
-			// farmhouse is edge case, use outside coordinates
-			//bool isOutsideX = Game1.viewport.Width <= Game1.currentLocation.map.DisplayWidth;
-			//bool isOutsideY = Game1.viewport.Height <= Game1.currentLocation.map.DisplayHeight;
-			//bool isFarmHouse = Game1.player.currentLocation is FarmHouse;
-
-			//float outsideXPos = npc.position.X - Game1.viewport.X;
-			//float insideXPos = npc.position.X + ((Game1.viewport.Width - Game1.currentLocation.map.DisplayWidth) / 2);
-			//float outsideYPos = npc.position.Y - Game1.viewport.Y;
-			//float insideYPos = npc.position.Y + ((Game1.viewport.Height - Game1.currentLocation.map.DisplayHeight) / 2);
-
+		private Vector2 GetChatPositionAboveNPC(Character npc, Rectangle textureBounds) {
 			Vector2 position = npc.getLocalPosition(Game1.viewport);
+			float scaleAdjustmentX = (_config.indicatorScale * -8) + 32;
+			float scaleAdjustmentY = (_config.indicatorScale * -16) - 68;
 
 			if (_config.useDebugOffsetsForAllNPCs) {
-				position.X += _config.debugIndicatorXOffset; // default: 16f
-				position.Y += _config.debugIndicatorYOffset; // default: -100f
+				position.X += scaleAdjustmentX;
+				position.Y += _config.debugIndicatorYOffset;
 			} else if (_npcOffsets.TryGetValue(npc.Name, out int offset)) {
-				position.X += 16;
-				position.Y += offset;
+				position.X += scaleAdjustmentX;
+				position.Y += scaleAdjustmentY + offset;
 			} else {
+				// only looks good at scale == 2
 				position.X += 16;
 				position.Y += -100;
 			}
