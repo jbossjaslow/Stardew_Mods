@@ -8,6 +8,8 @@ namespace Chatter {
 		public bool disableIndicatorsForMaxHearts = false;
 		public bool useCustomIndicatorImage = false;
 		public bool showIndicatorsDuringCutscenes = false;
+		public float indicatorScale = 2f;
+		public bool disableIndicatorBob = false;
 
 		// Debug
 		public bool enableDebugOutput = false;
@@ -15,7 +17,6 @@ namespace Chatter {
 		public float debugIndicatorXOffset = 16f;
 		public float debugIndicatorYOffset = -100f;
 		public bool useArrowKeysToAdjustDebugOffsets = false;
-		public float indicatorScale = 2f;
 
 		public void SetupGenericConfigMenu(IManifest ModManifest, IGenericModConfigMenuApi configMenu) {
 			configMenu.AddBoolOption(
@@ -66,6 +67,27 @@ namespace Chatter {
 			configMenu.AddParagraph(
 				mod: ModManifest,
 				text: () => "To use your own custom icon, create a file named \"indicator.png\" and place it in the \"Customization\" folder within the Chatter mod folder. Currently supports 16x16 images"
+			);
+
+			configMenu.AddNumberOption(
+				mod: ModManifest,
+				name: () => "Indicator scale",
+				tooltip: () => "This will affect the position of the indicator, best to leave it at 2 for now",
+				getValue: () => indicatorScale,
+				setValue: value => indicatorScale = value,
+				min: 0.25f,
+				max: 4f,
+				interval: 0.25f,
+				fieldId: ModConfigField.indicatorScale
+			);
+
+			configMenu.AddBoolOption(
+				mod: ModManifest,
+				name: () => "Disable indicator bobbing",
+				tooltip: () => "Removes the up and down motion of the indicator",
+				getValue: () => disableIndicatorBob,
+				setValue: value => disableIndicatorBob = value,
+				fieldId: ModConfigField.disableIndicatorBob
 			);
 
 			configMenu.AddPageLink(
@@ -135,18 +157,6 @@ namespace Chatter {
 				fieldId: ModConfigField.indicatorYOffset
 			);
 
-			configMenu.AddNumberOption(
-				mod: ModManifest,
-				name: () => "Indicator scale",
-				tooltip: () => "This will affect the position of the indicator, best to leave it at 2 for now",
-				getValue: () => indicatorScale,
-				setValue: value => indicatorScale = value,
-				min: 0.5f,
-				max: 6f,
-				interval: 0.5f,
-				fieldId: ModConfigField.indicatorScale
-			);
-
 			configMenu.AddParagraph(
 				mod: ModManifest,
 				text: () => "Version " + ModManifest.Version
@@ -160,6 +170,8 @@ namespace Chatter {
 		public const string disableIndicatorsForMaxHearts = "disableIndicatorsForMaxHearts";
 		public const string useCustomIndicatorImage = "useCustomIndicatorImage";
 		public const string showIndicatorsDuringCutscenes = "showIndicatorsDuringCutscenes";
+		public const string indicatorScale = "indicatorScale";
+		public const string disableIndicatorBob = "disableIndicatorBob";
 
 		// Debug
 		public const string enableDebugOutput = "enableDebugOutput";
@@ -167,7 +179,6 @@ namespace Chatter {
 		public const string indicatorXOffset = "debugIndicatorXOffset";
 		public const string indicatorYOffset = "debugIndicatorYOffset";
 		public const string useArrowKeysToAdjustDebugOffsets = "useArrowKeysToAdjustDebugOffsets";
-		public const string indicatorScale = "indicatorScale";
 	}
 
 	public class ModConfigPageID {
