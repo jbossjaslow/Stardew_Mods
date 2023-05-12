@@ -155,7 +155,7 @@ namespace Chatter {
 			if (eventIsOcurring) {
 				npcs = new NetCollection<NPC>(Game1.CurrentEvent.actors);
 			} else {
-				npcs = Game1.currentLocation.characters;
+				npcs = new NetCollection<NPC>(Game1.currentLocation.characters);
 			}
 
 			npcs.Filter(c => {
