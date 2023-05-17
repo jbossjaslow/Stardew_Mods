@@ -11,6 +11,8 @@ namespace Chatter {
 		public float indicatorScale = 2f;
 		public bool disableIndicatorBob = false;
 		public bool showIndicatorsWhenMenuIsOpen = false;
+		public bool showBirthdayIndicator = false;
+		public bool useCustomBirthdayIndicatorImage = false;
 
 		// Debug
 		public bool enableDebugOutput = false;
@@ -100,11 +102,39 @@ namespace Chatter {
 				fieldId: ModConfigField.showIndicatorsWhenMenuIsOpen
 			);
 
+			configMenu.AddBoolOption(
+				mod: ModManifest,
+				name: () => "Show a birthday indicator",
+				tooltip: () => "Shows a birthday indicator in place of a normal indicator if today is that NPC's birthday",
+				getValue: () => showBirthdayIndicator,
+				setValue: value => showBirthdayIndicator = value,
+				fieldId: ModConfigField.showBirthdayIndicator
+			);
+
+			configMenu.AddBoolOption(
+				mod: ModManifest,
+				name: () => "Use custom birthday indicator icon",
+				tooltip: () => "Whether the custom birthday indicator icon should be used",
+				getValue: () => useCustomBirthdayIndicatorImage,
+				setValue: value => useCustomBirthdayIndicatorImage = value,
+				fieldId: ModConfigField.useCustomBirthdayIndicatorImage
+			);
+
+			configMenu.AddParagraph(
+				mod: ModManifest,
+				text: () => "To use your own custom birthday icon, create a file named \"birthdayIndicator.png\" and place it in the \"Customization\" folder within the Chatter mod folder. Currently supports 16x16 images"
+			);
+
 			configMenu.AddPageLink(
 				mod: ModManifest,
 				pageId: ModConfigPageID.debug,
 				text: () => "Show Debug Options",
 				tooltip: () => "Configs used for debugging, if you want more control over the mod"
+			);
+
+			configMenu.AddParagraph(
+				mod: ModManifest,
+				text: () => ""
 			);
 
 			SetupDebugMenu(ModManifest, configMenu);
@@ -183,6 +213,8 @@ namespace Chatter {
 		public const string indicatorScale = "indicatorScale";
 		public const string disableIndicatorBob = "disableIndicatorBob";
 		public const string showIndicatorsWhenMenuIsOpen = "showIndicatorsWhenMenuIsOpen";
+		public const string showBirthdayIndicator = "showBirthdayIndicator";
+		public const string useCustomBirthdayIndicatorImage = "useCustomBirthdayIndicatorImage";
 
 		// Debug
 		public const string enableDebugOutput = "enableDebugOutput";

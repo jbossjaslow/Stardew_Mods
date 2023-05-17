@@ -20,16 +20,24 @@ namespace Chatter {
 		private readonly ModConfig _config;
 		private readonly Dictionary<string, int> _npcOffsets;
 
-		// Indicator properties
+		// Custom indicator properties
 		private readonly Texture2D defaultIndicatorTexture;
 		private readonly Texture2D? customIndicatorTexture;
 		private readonly Rectangle defaultIndicatorBounds;
 		private readonly Rectangle? customIndicatorBounds;
+		private readonly Texture2D defaultBirthdayIndicatorTexture;
+		private readonly Texture2D? customBirthdayIndicatorTexture;
+		private readonly Rectangle defaultBirthdayIndicatorBounds;
+		private readonly Rectangle? customBirthdayIndicatorBounds;
+
+		// Indicator properties
 		private readonly Color indicatorColor = Color.White * 0.9f;
 		private readonly float indicatorRotation = 0.0f;
 		private readonly Vector2 indicatorOrigin = Vector2.Zero;
 		private readonly SpriteEffects indicatorSpriteEffects = SpriteEffects.None;
 		private readonly float indicatorLayerDepth = 1f;
+
+		// NPCs that should not receive indicators
 		private readonly string[] illegalVillagers = {
 			"BabyPig",
 			"Pig",
@@ -58,18 +66,36 @@ namespace Chatter {
 			try {
 				customIndicatorTexture = _helper.ModContent.Load<Texture2D>("Customization/indicator.png");
 				customIndicatorBounds = customIndicatorTexture.Bounds;
-				_monitor.Log($"Custom file exists", LogLevel.Debug);
+				_monitor.Log($"Custom indicator exists", LogLevel.Debug);
 			} catch {
-				_monitor.Log($"Custom file does not exist", LogLevel.Debug);
+				_monitor.Log($"Custom indicator does not exist", LogLevel.Info);
+			}
+
+			try {
+				defaultBirthdayIndicatorTexture = _helper.ModContent.Load<Texture2D>("birthdayIndicator.png");
+				defaultBirthdayIndicatorBounds = defaultBirthdayIndicatorTexture.Bounds;
+				_monitor.Log($"Default birthday indicator exists", LogLevel.Debug);
+			} catch {
+				defaultBirthdayIndicatorTexture = defaultIndicatorTexture;
+				defaultBirthdayIndicatorBounds = defaultIndicatorBounds;
+				_monitor.Log($"Default birthday indicator does not exist, replacing with default indicator", LogLevel.Error);
+			}
+
+			try {
+				customBirthdayIndicatorTexture = _helper.ModContent.Load<Texture2D>("Customization/birthdayIndicator.png");
+				customBirthdayIndicatorBounds = customBirthdayIndicatorTexture.Bounds;
+				_monitor.Log($"Custom birthday indicator exists", LogLevel.Debug);
+			} catch {
+				_monitor.Log($"Custom birthday indicator does not exist", LogLevel.Info);
 			}
 		}
 
-		public void ToggleOption(bool showWhenNPCNeedsChat) {
+		public void ToggleMod(bool isOn) {
 			_helper.Events.Player.Warped -= OnWarped;
 			_helper.Events.Display.RenderedWorld -= OnRenderedWorld_DrawNPCHasChat;
 			_helper.Events.GameLoop.UpdateTicked -= UpdateTicked;
 
-			if (showWhenNPCNeedsChat) {
+			if (isOn) {
 				_helper.Events.Player.Warped += OnWarped;
 				_helper.Events.Display.RenderedWorld += OnRenderedWorld_DrawNPCHasChat;
 				_helper.Events.GameLoop.UpdateTicked += UpdateTicked;
@@ -79,38 +105,33 @@ namespace Chatter {
 		/// <summary>Raised before drawing the world</summary>
 		/// <param name="sender">The event sender.</param>
 		/// <param name="e">The event arguments.</param>
-		private void OnRenderedWorld_DrawNPCHasChat(object sender, RenderedWorldEventArgs e) {
+		private void OnRenderedWorld_DrawNPCHasChat(object? sender, RenderedWorldEventArgs e) {
 			if (Game1.currentLocation == null) return;
 
-			if (Game1.activeClickableMenu != null)
-				if (!_config.showIndicatorsWhenMenuIsOpen)
-					return;
+			if (Game1.activeClickableMenu != null && !_config.showIndicatorsWhenMenuIsOpen)
+				return;
 
 			// draws the static icon
 			foreach (var npc in GetNPCsInCurrentLocation()) {
 				if (_config.enableDebugOutput && _pauseTicks.Value % 60 == 0) {
-					_monitor.Log($"Checking if {Game1.player.Name} can chat with {npc.Name}: {ShouldShowIndicatorFor(npc)}", LogLevel.Debug);
+					_monitor.Log($"Checking if {Game1.player.Name} can chat with {npc.Name}: {ShouldShowChatIndicatorFor(npc)}", LogLevel.Debug);
 				}
 
-				if (npc.CanSocialize && ShouldShowIndicatorFor(npc)) {
-					DrawNPC(npc);
+				if (ShouldShowBirthdayIndicatorFor(npc)) {
+					DrawIndicator(npc, IndicatorTexture(true), IndicatorBounds(true));
+				} else if (ShouldShowChatIndicatorFor(npc)) {
+					DrawIndicator(npc, IndicatorTexture(false), IndicatorBounds(false));
 				}
 			}
 		}
 
-		private void DrawNPC(NPC npc) {
-			Texture2D texture = _config.useCustomIndicatorImage ?
-				(customIndicatorTexture ?? defaultIndicatorTexture) :
-				defaultIndicatorTexture;
-			Rectangle bounds = _config.useCustomIndicatorImage ?
-				(customIndicatorBounds ?? defaultIndicatorBounds) :
-				defaultIndicatorBounds;
+		private void DrawIndicator(NPC npc, Texture2D texture, Rectangle bounds) {
 			float scale = _config.indicatorScale;
-
-			var position = GetChatPositionAboveNPC(npc, bounds);
+			var position = GetChatPositionAboveNPC(npc);
 			if (!_config.disableIndicatorBob)
 				position.Y += (float)(Math.Sin(Game1.currentGameTime.TotalGameTime.TotalMilliseconds / 300.0 + npc.Name.GetHashCode()) * 5.0);
 
+			// NPC.draw instead???
 			Game1.spriteBatch.Draw(
 				texture,
 				position,
@@ -123,7 +144,29 @@ namespace Chatter {
 				indicatorLayerDepth);
 		}
 
-		private Vector2 GetChatPositionAboveNPC(NPC npc, Rectangle textureBounds) {
+		private Texture2D IndicatorTexture(bool isBirthday) {
+			var tuple = (isBirthday, _config.useCustomIndicatorImage, _config.useCustomBirthdayIndicatorImage);
+
+			return tuple switch {
+				(true, _, true) => customBirthdayIndicatorTexture ?? defaultBirthdayIndicatorTexture,
+				(true, _, false) => defaultBirthdayIndicatorTexture,
+				(false, true, _) => customIndicatorTexture ?? defaultIndicatorTexture,
+				(false, false, _) => defaultIndicatorTexture
+			};
+		}
+
+		private Rectangle IndicatorBounds(bool isBirthday) {
+			var tuple = (isBirthday, _config.useCustomIndicatorImage, _config.useCustomBirthdayIndicatorImage);
+
+			return tuple switch {
+				(true, _, true) => customBirthdayIndicatorBounds ?? defaultBirthdayIndicatorBounds,
+				(true, _, false) => defaultBirthdayIndicatorBounds,
+				(false, true, _) => customIndicatorBounds ?? defaultIndicatorBounds,
+				(false, false, _) => defaultIndicatorBounds
+			};
+		}
+
+		private Vector2 GetChatPositionAboveNPC(NPC npc) {
 			Vector2 position = npc.getLocalPosition(Game1.viewport);
 			float scaleAdjustmentX = (_config.indicatorScale * -8) + 32;
 			float scaleAdjustmentY = (_config.indicatorScale * -16) - 68;
@@ -153,7 +196,7 @@ namespace Chatter {
 
 			bool eventIsOcurring = _config.showIndicatorsDuringCutscenes ? Game1.CurrentEvent != null : Game1.isFestival();
 			if (eventIsOcurring) {
-				npcs = new NetCollection<NPC>(Game1.CurrentEvent.actors);
+				npcs = new NetCollection<NPC>(Game1.currentLocation.currentEvent.actors);
 			} else {
 				npcs = new NetCollection<NPC>(Game1.currentLocation.characters);
 			}
@@ -170,9 +213,9 @@ namespace Chatter {
 		}
 
 		/// <summary>Whether the indicator for the given npc should be shown</summary>
-		private bool ShouldShowIndicatorFor(NPC npc) {
-			// if npc is sleeping, they can't chat with us
-			if (npc.isSleeping.Value) {
+		private bool ShouldShowChatIndicatorFor(NPC npc) {
+			// if npc is sleeping or they cannot socialize, then they can't chat with us
+			if (npc.isSleeping.Value || !npc.CanSocialize) {
 				return false;
 			}
 
@@ -183,17 +226,39 @@ namespace Chatter {
 					// if player has reached max hearts with npc, they don't need to talk to them
 					return false;
 				}
-			}
 
-			// At this point, player has not reached max hearts with npc
-			// Return if player has talked to npc today
-			return !Game1.player.hasPlayerTalkedToNPC(npc.Name);
+				// At this point, player has not reached max hearts with npc
+				// Return if player has talked to npc today
+				return !friendshipValues.TalkedToToday;
+			} else {
+				// if friendship data doesn't exist for that npc (aka meeting them for the first time),
+				// then of course you can talk to them
+				return true;
+			}
+		}
+
+		private bool ShouldShowBirthdayIndicatorFor(NPC npc) {
+			// if the config is disabled OR it's not their birthday, then return false
+			if (!_config.showBirthdayIndicator || !npc.isBirthday(Game1.currentSeason, Game1.dayOfMonth))
+				return false;
+
+			// We know it's their birthday, now we need to determine if they can receive a gift
+			// They can receive a gift on their birthday, regardless of how many gifts they've been given this week
+			// So all we need to do is check whether they're received a gift today
+
+			// check friendship values with npc
+			if (Game1.player.friendshipData.TryGetValue(npc.Name, out Friendship friendshipValues))
+				// if npc has been met before, check gifts given today
+				return friendshipValues.GiftsToday == 0;
+			else
+				// npc hasn't been met today, so we can give them a gift
+				return true;
 		}
 
 		/// <summary>Raised after a player warps to a new location.</summary>
 		/// <param name="sender">The event sender.</param>
 		/// <param name="e">The event arguments.</param>
-		private void OnWarped(object sender, WarpedEventArgs e) {
+		private void OnWarped(object? sender, WarpedEventArgs e) {
 			if (e.IsLocalPlayer) {
 				_pauseTicks.Value = 60;
 			}
@@ -202,7 +267,7 @@ namespace Chatter {
 		/// <summary>Raised after the game state is updated (≈60 times per second).</summary>
 		/// <param name="sender">The event sender.</param>
 		/// <param name="e">The event arguments.</param>
-		private void UpdateTicked(object sender, UpdateTickedEventArgs e) {
+		private void UpdateTicked(object? sender, UpdateTickedEventArgs e) {
 			if (Game1.eventUp || Game1.activeClickableMenu != null)
 				return;
 
@@ -221,7 +286,7 @@ namespace Chatter {
 		}
 
 		public void Dispose() {
-			ToggleOption(false);
+			ToggleMod(false);
 		}
 	}
 }

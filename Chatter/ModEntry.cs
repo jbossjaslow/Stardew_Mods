@@ -19,7 +19,7 @@ namespace Chatter {
 		/// <summary>The mod entry point, called after the mod is first loaded.</summary>
 		/// <param name="helper">Provides simplified APIs for writing mods.</param>
 		public override void Entry(IModHelper helper) {
-			this.Config = this.Helper.ReadConfig<ModConfig>();
+			Config = this.Helper.ReadConfig<ModConfig>();
 
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
 			helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
@@ -46,7 +46,7 @@ namespace Chatter {
 				reset: () => this.Config = new ModConfig(),
 				save: () => {
 					this.Helper.WriteConfig(this.Config);
-					_showWhenNPCNeedsChat.ToggleOption(Config.enableIndicators);
+					_showWhenNPCNeedsChat.ToggleMod(Config.enableIndicators);
 				}
 			);
 			Config.SetupGenericConfigMenu(ModManifest, configMenu);
@@ -78,7 +78,7 @@ namespace Chatter {
 			//        Debug.WriteLine(npc.Name);
 			//}
 
-			if (Config.enableIndicators) _showWhenNPCNeedsChat.ToggleOption(true);
+			if (Config.enableIndicators) _showWhenNPCNeedsChat.ToggleMod(true);
 		}
 
 		/// <summary>Raised after the player presses a button on the keyboard, controller, or mouse.</summary>
@@ -90,7 +90,7 @@ namespace Chatter {
 
 			if (e.Button == Config.enableIndicatorsButton) {
 				Config.enableIndicators = !Config.enableIndicators;
-				_showWhenNPCNeedsChat.ToggleOption(Config.enableIndicators);
+				_showWhenNPCNeedsChat.ToggleMod(Config.enableIndicators);
 				this.Helper.WriteConfig(this.Config);
 			}
 
