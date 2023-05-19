@@ -6,5 +6,5 @@
   "UniqueID": "Jboss.Chatter",
   "EntryDll": "Chatter.dll",
   "MinimumApiVersion": "3.0.0",
-  "UpdateKeys": [ "Nexus:16559", "GitHub:jbossjaslow/Chatter" ]
+  "UpdateKeys": [ "Nexus:16559" ]
 }
