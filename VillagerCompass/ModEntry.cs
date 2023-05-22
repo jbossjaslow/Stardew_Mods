@@ -1,6 +1,8 @@
 ﻿using GenericModConfigMenu;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
+using StardewValley;
+using System.Collections.Generic;
 
 namespace VillagerCompass {
 	internal sealed class ModEntry : Mod {
@@ -37,6 +39,16 @@ namespace VillagerCompass {
 			Monitor.Log($"Successfully loaded the save", LogLevel.Debug);
 
 			if (Config.enableMod) _villagerCompass.ToggleMod(isOn: true);
+
+			if (Config.villagerList.Count == 0) {
+				List<string> villagers = new();
+				foreach (NPC npc in Utility.getAllCharacters()) villagers.Add(npc.Name);
+				villagers.Sort();
+				Config.villagerList = villagers;
+				this.Helper.WriteConfig(this.Config);
+			}
+
+			_villagerCompass.npcToFind = Game1.getCharacterFromName(Config.villagerToFind);
 		}
 
 		private void SetupConfigMenu() {
@@ -52,9 +64,24 @@ namespace VillagerCompass {
 				save: () => {
 					this.Helper.WriteConfig(this.Config);
 					_villagerCompass.ToggleMod(isOn: Config.enableMod);
+					_villagerCompass.npcToFind = Game1.getCharacterFromName(Config.villagerToFind);
 				}
 			);
 			Config.SetupGenericConfigMenu(ModManifest, configMenu);
+		}
+
+		/// <summary>Raised after the player presses a button on the keyboard, controller, or mouse.</summary>
+		/// <param name="sender">The event sender.</param>
+		/// <param name="e">The event data.</param>
+		private void OnButtonPressed(object? sender, ButtonPressedEventArgs e) {
+			// ignore if player hasn't loaded a save yet
+			if (!Context.IsWorldReady) return;
+
+			if (e.Button == Config.enableModButton) {
+				Config.enableMod = !Config.enableMod;
+				_villagerCompass.ToggleMod(Config.enableMod);
+				this.Helper.WriteConfig(this.Config);
+			}
 		}
 	}
 }

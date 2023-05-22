@@ -14,7 +14,9 @@ namespace VillagerCompass {
 
 		private readonly PerScreen<int> _pauseTicks = new(createNewState: () => 60);
 		private float _rotation = 0;
-		private readonly int scale = 3;
+		private readonly int scale = 1;
+
+		public NPC? npcToFind;
 
 		// Custom indicator properties
 		private readonly Texture2D defaultIndicatorTexture;
@@ -37,6 +39,13 @@ namespace VillagerCompass {
 			//} catch {
 			//	_monitor.Log($"Custom indicator does not exist", LogLevel.Info);
 			//}
+
+			//destinationRectangle = new(
+			//	x: Game1.graphics.GraphicsDevice.Viewport.TitleSafeArea.Right - 250,
+			//	y: Game1.graphics.GraphicsDevice.Viewport.TitleSafeArea.Bottom - 50,
+			//	width: 7 * scale,
+			//	height: 19 * scale
+			//);
 		}
 		public void ToggleMod(bool isOn) {
 			//_helper.Events.Player.Warped -= OnWarped;
@@ -52,35 +61,109 @@ namespace VillagerCompass {
 
 		private void OnRenderingHud(object? sender, RenderingHudEventArgs e) {
 			//_monitor.Log($"{Game1.graphics.GraphicsDevice.Viewport.TitleSafeArea}", LogLevel.Debug);
-			RotateCompassToFind(Game1.getCharacterFromName("Emily"));
-			Rectangle destRect = new(
+			if (npcToFind == null) return;
+
+			if (PlayerLocation() == FindLocationOf(npcToFind))
+				_rotation = CompassRotationFor(npcToFind);
+
+			Rectangle destinationRectangle = new(
 				x: Game1.graphics.GraphicsDevice.Viewport.TitleSafeArea.Right - 250,
-				y: Game1.graphics.GraphicsDevice.Viewport.TitleSafeArea.Bottom - 50,
-				width: 7 * scale,
-				height: 19 * scale
+				y: Game1.graphics.GraphicsDevice.Viewport.TitleSafeArea.Bottom - 80,
+				width: defaultIndicatorBounds.Width * 3,
+				height: defaultIndicatorBounds.Height * 3
 			);
 
 			Game1.spriteBatch.Draw(
 				texture: defaultIndicatorTexture,
-				destinationRectangle: destRect,
+				destinationRectangle: destinationRectangle,
 				sourceRectangle: defaultIndicatorBounds,
 				color: Color.White,
 				rotation: _rotation,
-				origin: new(4, 10),
+				origin: new(0.5f + defaultIndicatorBounds.Width / 2, 0.5f + defaultIndicatorBounds.Height / 2),//new(4, 10),
 				effects: SpriteEffects.None,
 				layerDepth: 1f
 			);
+
+			DrawCompassPoints(destinationRectangle);
 		}
 
-		private void RotateCompassToFind(NPC npc) {
-			//Utility.ForAllLocations
+		private void DrawCompassPoints(Rectangle arrowRect) {
+			Vector2 center = Utility.PointToVector2(arrowRect.Center);
+			float xOff = -arrowRect.Width * 0.75f - 3;
+			float yOff = -arrowRect.Height * 0.75f;
+
+			Game1.spriteBatch.DrawString(
+				spriteFont: Game1.smallFont,
+				text: "N",
+				position: new(x: center.X + xOff,
+							  y: center.Y - arrowRect.Height + yOff),
+				color: Color.White
+			);
+
+			Game1.spriteBatch.DrawString(
+				spriteFont: Game1.smallFont,
+				text: "S",
+				position: new(x: center.X + xOff,
+							  y: center.Y + arrowRect.Height + yOff),
+				color: Color.White
+			);
+
+			Game1.spriteBatch.DrawString(
+				spriteFont: Game1.smallFont,
+				text: "E",
+				position: new(x: center.X + arrowRect.Height + xOff,
+							  y: center.Y + yOff),
+				color: Color.White
+			);
+
+			Game1.spriteBatch.DrawString(
+				spriteFont: Game1.smallFont,
+				text: "W",
+				position: new(x: center.X - arrowRect.Height + xOff,
+							  y: center.Y + yOff),
+				color: Color.White
+			);
+
+			//Game1.spriteBatch.DrawString(
+			//	spriteFont: Game1.smallFont,
+			//	text: "N",
+			//	position: new(x: arrowRect.Left - arrowRect.Width / 2,
+			//				  y: arrowRect.Top - arrowRect.Height),
+			//	color: Color.White
+			//);
+
+			//Game1.spriteBatch.DrawString(
+			//	spriteFont: Game1.smallFont,
+			//	text: "S",
+			//	position: new(x: arrowRect.Left - arrowRect.Width / 2,
+			//				  y: arrowRect.Top + arrowRect.Height / 2),
+			//	color: Color.White
+			//);
+
+			//Game1.spriteBatch.DrawString(
+			//	spriteFont: Game1.smallFont,
+			//	text: "E",
+			//	position: new(x: arrowRect.X + arrowRect.Height / 2,
+			//				  y: arrowRect.Y - arrowRect.Height / 2 + defaultIndicatorBounds.Height / 2),
+			//	color: Color.White
+			//);
+
+			//Game1.spriteBatch.DrawString(
+			//	spriteFont: Game1.smallFont,
+			//	text: "W",
+			//	position: new(x: arrowRect.X - arrowRect.Height / 2 - arrowRect.Width - 5f,
+			//				  y: arrowRect.Y - arrowRect.Height / 2 + defaultIndicatorBounds.Height / 2),
+			//	color: Color.White
+			//);
+		}
+
+		private static float CompassRotationFor(NPC npc) {
+			// Utility.ForAllLocations
 			// Utility.drawLineWithScreenCoordinates
-			if (PlayerLocation() == FindLocationOf(npc)) {
-				Vector2 vector = Game1.player.position;
-				Vector2 vector2 = npc.position;
-				Vector2 vector3 = vector - vector2;
-				_rotation = (float)Math.Atan2(vector3.Y, vector3.X) - MathF.PI / 2;
-			}
+			Vector2 vector = Game1.player.position;
+			Vector2 vector2 = npc.position;
+			Vector2 vector3 = vector - vector2;
+			return (float)Math.Atan2(vector3.Y, vector3.X) - MathF.PI / 2;
 		}
 
 		private static GameLocation PlayerLocation() {
