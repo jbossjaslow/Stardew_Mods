@@ -15,6 +15,7 @@ namespace VillagerCompass {
 		private readonly PerScreen<int> _pauseTicks = new(createNewState: () => 60);
 		private float _rotation = 0;
 		private readonly int scale = 1;
+		private bool currentNPCIsNotInLocation = false;
 
 		public NPC? npcToFind;
 
@@ -63,8 +64,7 @@ namespace VillagerCompass {
 			//_monitor.Log($"{Game1.graphics.GraphicsDevice.Viewport.TitleSafeArea}", LogLevel.Debug);
 			if (npcToFind == null) return;
 
-			if (PlayerLocation() == FindLocationOf(npcToFind))
-				_rotation = CompassRotationFor(npcToFind);
+			if (Game1.CurrentEvent != null && !Game1.CurrentEvent.isFestival) return;
 
 			Rectangle destinationRectangle = new(
 				x: Game1.graphics.GraphicsDevice.Viewport.TitleSafeArea.Right - 250,
@@ -72,6 +72,8 @@ namespace VillagerCompass {
 				width: defaultIndicatorBounds.Width * 3,
 				height: defaultIndicatorBounds.Height * 3
 			);
+
+			RotateCompass(npcToFind, destinationRectangle);
 
 			Game1.spriteBatch.Draw(
 				texture: defaultIndicatorTexture,
@@ -87,7 +89,7 @@ namespace VillagerCompass {
 			DrawCompassPoints(destinationRectangle);
 		}
 
-		private void DrawCompassPoints(Rectangle arrowRect) {
+		private static void DrawCompassPoints(Rectangle arrowRect) {
 			Vector2 center = Utility.PointToVector2(arrowRect.Center);
 			float xOff = -arrowRect.Width * 0.75f - 3;
 			float yOff = -arrowRect.Height * 0.75f;
@@ -157,7 +159,20 @@ namespace VillagerCompass {
 			//);
 		}
 
-		private static float CompassRotationFor(NPC npc) {
+		private void RotateCompass(NPC npc, Rectangle arrowRect) {
+			GameLocation playerLocation = PlayerLocation();
+			GameLocation npcLocation = FindLocationOf(npc);
+
+			currentNPCIsNotInLocation = playerLocation == npcLocation;
+			if (currentNPCIsNotInLocation)
+				_rotation = CompassRotationTo(npc);
+			else {
+				DrawNPCLocationAboveCompass(npcLocation, arrowRect);
+				_rotation = 0;
+			}
+		}
+
+		private static float CompassRotationTo(NPC npc) {
 			// Utility.ForAllLocations
 			// Utility.drawLineWithScreenCoordinates
 			Vector2 vector = Game1.player.position;
@@ -172,6 +187,25 @@ namespace VillagerCompass {
 
 		private static GameLocation FindLocationOf(NPC npc) {
 			return npc.currentLocation;
+		}
+
+		private static void DrawNPCLocationAboveCompass(GameLocation loc, Rectangle arrowRect) {
+			Vector2 center = Utility.PointToVector2(arrowRect.Center);
+			float xOff = -arrowRect.Width * 0.75f - 100;
+			float yOff = -arrowRect.Height * 0.75f - 50;
+
+			string name = loc.NameOrUniqueName;
+			const string custom = "Custom_";
+			int result = String.Compare(name, 0, custom, 0, 7, true);
+			if (result == 0) name = name.Remove(0, 7);
+
+			Game1.spriteBatch.DrawString(
+				spriteFont: Game1.smallFont,
+				text: name,
+				position: new(x: center.X + xOff,
+							  y: center.Y - arrowRect.Height + yOff),
+				color: Color.White
+			);
 		}
 
 		private void OnWarped(object? sender, WarpedEventArgs e) {

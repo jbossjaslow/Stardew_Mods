@@ -12,6 +12,7 @@ namespace VillagerCompass {
 		/// <summary>The mod configuration from the player.</summary>
 		private ModConfig Config;
 		private VillagerCompass _villagerCompass;
+		private IGenericModConfigMenuApi? _configMenu;
 
 		/*********
         ** Public methods
@@ -23,6 +24,7 @@ namespace VillagerCompass {
 
 			helper.Events.GameLoop.GameLaunched += OnGameLaunched;
 			helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
+			helper.Events.Input.ButtonPressed += OnButtonPressed;
 		}
 
 		/*********
@@ -40,25 +42,23 @@ namespace VillagerCompass {
 
 			if (Config.enableMod) _villagerCompass.ToggleMod(isOn: true);
 
-			if (Config.villagerList.Count == 0) {
-				List<string> villagers = new();
-				foreach (NPC npc in Utility.getAllCharacters()) villagers.Add(npc.Name);
-				villagers.Sort();
-				Config.villagerList = villagers;
-				this.Helper.WriteConfig(this.Config);
-			}
+			List<string> villagers = new();
+			foreach (NPC npc in Utility.getAllCharacters()) villagers.Add(npc.Name);
+			villagers.Sort();
+			Config.villagerList = villagers;
+			this.Helper.WriteConfig(this.Config);
 
 			_villagerCompass.npcToFind = Game1.getCharacterFromName(Config.villagerToFind);
 		}
 
 		private void SetupConfigMenu() {
 			// get Generic Mod Config Menu's API (if it's installed)
-			var configMenu = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
-			if (configMenu is null)
+			_configMenu = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
+			if (_configMenu is null)
 				return;
 
 			// register mod
-			configMenu.Register(
+			_configMenu.Register(
 				mod: this.ModManifest,
 				reset: () => this.Config = new ModConfig(),
 				save: () => {
@@ -67,7 +67,7 @@ namespace VillagerCompass {
 					_villagerCompass.npcToFind = Game1.getCharacterFromName(Config.villagerToFind);
 				}
 			);
-			Config.SetupGenericConfigMenu(ModManifest, configMenu);
+			Config.SetupGenericConfigMenu(ModManifest, _configMenu);
 		}
 
 		/// <summary>Raised after the player presses a button on the keyboard, controller, or mouse.</summary>
@@ -75,7 +75,12 @@ namespace VillagerCompass {
 		/// <param name="e">The event data.</param>
 		private void OnButtonPressed(object? sender, ButtonPressedEventArgs e) {
 			// ignore if player hasn't loaded a save yet
-			if (!Context.IsWorldReady) return;
+			if (!Context.IsWorldReady || _configMenu == null) return;
+
+			if (Config.openModPageKeybindCombo.JustPressed()) {
+				_configMenu.OpenModMenu(ModManifest);
+				return;
+			}
 
 			if (e.Button == Config.enableModButton) {
 				Config.enableMod = !Config.enableMod;

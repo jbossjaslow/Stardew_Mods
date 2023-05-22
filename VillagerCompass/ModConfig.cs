@@ -1,11 +1,13 @@
 ﻿using GenericModConfigMenu;
 using StardewModdingAPI;
+using StardewModdingAPI.Utilities;
 using System.Collections.Generic;
 
 namespace VillagerCompass {
 	public class ModConfig {
 		public bool enableMod = false;
 		public SButton enableModButton = SButton.P;
+		public KeybindList openModPageKeybindCombo = new();
 		public string villagerToFind = "Emily";
 		public List<string> villagerList = new();
 
@@ -26,6 +28,15 @@ namespace VillagerCompass {
 				getValue: () => enableModButton,
 				setValue: value => enableModButton = value,
 				fieldId: ModConfigField.enableModButton
+			);
+
+			configMenu.AddKeybindList(
+				mod: ModManifest,
+				getValue: () => openModPageKeybindCombo,
+				setValue: value => openModPageKeybindCombo = value,
+				name: () => "Config page keybind",
+				tooltip: () => "Keybind to open this config page, for easier access to villager list",
+				fieldId: ModConfigField.openModPageKeybindCombo
 			);
 
 			configMenu.AddTextOption(
@@ -51,6 +62,7 @@ namespace VillagerCompass {
 	public class ModConfigField {
 		public const string enableMod = "enableMod";
 		public const string enableModButton = "enableModButton";
+		public const string openModPageKeybindCombo = "openModPageKeybindCombo";
 		public const string villagerToFind = "villagerToFind";
 	}
 }
