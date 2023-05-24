@@ -38,7 +38,7 @@ namespace Chatter {
 		private readonly float indicatorLayerDepth = 1f;
 
 		// NPCs that should not receive indicators
-		private readonly string[] illegalVillagers = {
+		private readonly string[] nonInteractableVillagers = {
 			"BabyPig",
 			"Pig",
 			"White Chicken",
@@ -194,9 +194,10 @@ namespace Chatter {
 		private NetCollection<NPC> GetNPCsInCurrentLocation() {
 			NetCollection<NPC> npcs;
 
-			bool eventIsOcurring = _config.showIndicatorsDuringCutscenes ? Game1.CurrentEvent != null : Game1.isFestival();
-			if (eventIsOcurring) {
-				npcs = new NetCollection<NPC>(Game1.currentLocation.currentEvent.actors);
+			if (IsCutscene()) {
+				npcs = _config.showIndicatorsDuringCutscenes ? new NetCollection<NPC>(Game1.CurrentEvent.actors) : new();
+			} else if (Game1.isFestival()) {
+				npcs = new NetCollection<NPC>(Game1.CurrentEvent.actors);
 			} else {
 				npcs = new NetCollection<NPC>(Game1.currentLocation.characters);
 			}
@@ -204,12 +205,16 @@ namespace Chatter {
 			npcs.Filter(c => {
 				// At the grange festival (fall 16), the animals are classified as villagers for some reason
 				// They cannot be talked to, so they are removed from the list
-				if (illegalVillagers.Contains(c.Name))
+				if (nonInteractableVillagers.Contains(c.Name))
 					return false;
 
 				return c.isVillager();
 			});
 			return npcs;
+		}
+
+		private static bool IsCutscene() {
+			return Game1.CurrentEvent != null && !Game1.isFestival();
 		}
 
 		/// <summary>Whether the indicator for the given npc should be shown</summary>
