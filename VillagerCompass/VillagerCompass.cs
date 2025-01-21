@@ -15,7 +15,7 @@ namespace VillagerCompass {
 		private readonly PerScreen<int> _pauseTicks = new(createNewState: () => 60);
 		private float _rotation = 0;
 		private readonly int scale = 1;
-		private bool currentNPCIsNotInLocation = false;
+		private bool currentNPCIsInLocation = false;
 
 		public NPC? npcToFind;
 
@@ -75,16 +75,18 @@ namespace VillagerCompass {
 
 			RotateCompass(npcToFind, destinationRectangle);
 
-			Game1.spriteBatch.Draw(
-				texture: defaultIndicatorTexture,
-				destinationRectangle: destinationRectangle,
-				sourceRectangle: defaultIndicatorBounds,
-				color: Color.White,
-				rotation: _rotation,
-				origin: new(0.5f + defaultIndicatorBounds.Width / 2, 0.5f + defaultIndicatorBounds.Height / 2),//new(4, 10),
-				effects: SpriteEffects.None,
-				layerDepth: 1f
-			);
+			if (currentNPCIsInLocation) {
+				Game1.spriteBatch.Draw(
+					texture: defaultIndicatorTexture,
+					destinationRectangle: destinationRectangle,
+					sourceRectangle: defaultIndicatorBounds,
+					color: Color.White,
+					rotation: _rotation,
+					origin: new(0.5f + defaultIndicatorBounds.Width / 2, 0.5f + defaultIndicatorBounds.Height / 2),//new(4, 10),
+					effects: SpriteEffects.None,
+					layerDepth: 1f
+				);
+			}
 
 			DrawCompassPoints(destinationRectangle);
 		}
@@ -163,8 +165,8 @@ namespace VillagerCompass {
 			GameLocation playerLocation = PlayerLocation();
 			GameLocation npcLocation = FindLocationOf(npc);
 
-			currentNPCIsNotInLocation = playerLocation == npcLocation;
-			if (currentNPCIsNotInLocation)
+			currentNPCIsInLocation = playerLocation == npcLocation;
+			if (currentNPCIsInLocation)
 				_rotation = CompassRotationTo(npc);
 			else {
 				DrawNPCLocationAboveCompass(npcLocation, arrowRect);
@@ -175,8 +177,8 @@ namespace VillagerCompass {
 		private static float CompassRotationTo(NPC npc) {
 			// Utility.ForAllLocations
 			// Utility.drawLineWithScreenCoordinates
-			Vector2 vector = Game1.player.position;
-			Vector2 vector2 = npc.position;
+			Vector2 vector = Game1.player.position.Get();
+			Vector2 vector2 = npc.position.Get();
 			Vector2 vector3 = vector - vector2;
 			return (float)Math.Atan2(vector3.Y, vector3.X) - MathF.PI / 2;
 		}
@@ -185,7 +187,7 @@ namespace VillagerCompass {
 			return Game1.player.currentLocation;
 		}
 
-		private static GameLocation FindLocationOf(NPC npc) {
+		private GameLocation FindLocationOf(NPC npc) {
 			return npc.currentLocation;
 		}
 

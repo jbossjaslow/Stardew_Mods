@@ -1,0 +1,10 @@
+{
+  "Name": "Embedded Debugger",
+  "Author": "Jboss",
+  "Version": "1.0.0",
+  "Description": "Allows you to type debug commands in-game",
+  "UniqueID": "Jboss.EmbeddedDebugger",
+  "EntryDll": "EmbeddedDebugger.dll",
+  "MinimumApiVersion": "3.0.0",
+  "UpdateKeys": []
+}

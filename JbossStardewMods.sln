@@ -5,7 +5,11 @@ VisualStudioVersion = 17.5.33530.505
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Chatter", "Chatter\Chatter.csproj", "{FE71A1A8-6E29-4AF3-B57B-A41915821420}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VillagerCompass", "VillagerCompass\VillagerCompass.csproj", "{EA4F8D90-637E-4A51-9B2E-897C1389FD65}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VillagerCompass", "VillagerCompass\VillagerCompass.csproj", "{EA4F8D90-637E-4A51-9B2E-897C1389FD65}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JukeboxHero", "JukeboxHero\JukeboxHero.csproj", "{63B6DB9A-7918-43B1-B5A8-294093808795}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EmbeddedDebugger", "EmbeddedDebugger\EmbeddedDebugger.csproj", "{B8FCBAAD-DC49-4739-A6A2-714CB3D412E0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +25,12 @@ Global
 		{EA4F8D90-637E-4A51-9B2E-897C1389FD65}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EA4F8D90-637E-4A51-9B2E-897C1389FD65}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EA4F8D90-637E-4A51-9B2E-897C1389FD65}.Release|Any CPU.Build.0 = Release|Any CPU
+		{63B6DB9A-7918-43B1-B5A8-294093808795}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{63B6DB9A-7918-43B1-B5A8-294093808795}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{63B6DB9A-7918-43B1-B5A8-294093808795}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B8FCBAAD-DC49-4739-A6A2-714CB3D412E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8FCBAAD-DC49-4739-A6A2-714CB3D412E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8FCBAAD-DC49-4739-A6A2-714CB3D412E0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

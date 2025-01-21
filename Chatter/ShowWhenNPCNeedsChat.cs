@@ -244,7 +244,7 @@ namespace Chatter {
 
 		private bool ShouldShowBirthdayIndicatorFor(NPC npc) {
 			// if the config is disabled OR it's not their birthday, then return false
-			if (!_config.showBirthdayIndicator || !npc.isBirthday(Game1.currentSeason, Game1.dayOfMonth))
+			if (!_config.showBirthdayIndicator || !npc.isBirthday())
 				return false;
 
 			// We know it's their birthday, now we need to determine if they can receive a gift
