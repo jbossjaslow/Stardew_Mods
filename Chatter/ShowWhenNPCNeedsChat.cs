@@ -45,15 +45,7 @@ namespace Chatter {
 			"Brown Chicken",
 			"White Cow",
 			"BabyWhite Cow",
-			"PonyRide",
-			"Skeleton",
-			"Shadow Brute",
-			"Skeleton Mage",
-			"Wilderness Golem",
-			"Stone Golem",
-			"Shadow Shaman",
-			"Metal Head",
-			"Mummy"
+			"PonyRide"
 		};
 
 		public ShowWhenNPCNeedsChat(IModHelper helper, IMonitor monitor, ModConfig config, Dictionary<string, int> npcOffsets) {
