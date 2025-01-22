@@ -18,7 +18,7 @@ namespace WindowedBorderless {
 
 			configMenu.AddKeybind(
 				mod: ModManifest,
-				name: () => "Windowed borderless mode keybind",
+				name: () => "Windowed borderless keybind",
 				tooltip: () => "Forces the game into windowed borderless mode",
 				getValue: () => forceWindowedBorderlessKeybind,
 				setValue: value => forceWindowedBorderlessKeybind = value,
@@ -27,7 +27,7 @@ namespace WindowedBorderless {
 
 			configMenu.AddParagraph(
 				mod: ModManifest,
-				text: () => "To prevent unneeded behavior, the keybind for forcing the game into windowed borderless mode is locked behind the above flag. To use the keybind, set the flag to True, then use the keybind, and then set it to False again"
+				text: () => "To prevent unneeded behavior, the keybind for forcing the game into windowed borderless mode is locked behind the above flag. To use the keybind, set the flag to True, use the keybind, and then set it to False again"
 			);
 		}
 	}

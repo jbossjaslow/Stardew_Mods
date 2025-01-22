@@ -1,10 +1,10 @@
 {
   "Name": "WindowedBorderless",
   "Author": "Jboss",
-  "Version": "1.0.0",
+  "Version": "1.0.1",
   "Description": "Forces the game into windowed borderless mode on startup",
   "UniqueID": "Jboss.WindowedBorderless",
   "EntryDll": "WindowedBorderless.dll",
   "MinimumApiVersion": "4.0.0",
-  "UpdateKeys": []
+  "UpdateKeys": [ "Nexus:31066" ]
 }
